@@ -17,7 +17,11 @@
         />
         <div class="valid-feedback">Title looks good!</div>
       </div>
-
+      <div class="mb-3">
+  <button type="button" id="generate-btn" class="btn btn-outline-secondary btn-sm">
+    ✨ Generate description
+  </button>
+</div>
       <div class="mb-3">
         <label for="description" class="form-label">Description</label>
         <textarea
@@ -101,3 +105,40 @@
     </form>
   </div>
 </div>
+<script>
+document.getElementById('generate-btn').addEventListener('click', async () => {
+  const title = document.getElementById('title').value;
+  const category = document.getElementById('category').value;
+  const location = document.getElementById('location').value;
+
+  if (!title || !location) {
+    alert("Add a title and location first — the AI needs something to work with.");
+    return;
+  }
+
+  const btn = document.getElementById('generate-btn');
+  const originalText = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = "Generating...";
+  try {
+    const res = await fetch("/listings/generate-description", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title, category, location }),
+    });
+
+    if (!res.ok) {
+      throw new Error("Server returned an error");
+    }
+
+    const data = await res.json();
+    document.getElementById('description').value = data.description;
+  } catch (err) {
+    console.error(err);
+    alert("Couldn't generate a description right now. Please try again.");
+  } finally {
+    btn.disabled = false;
+    btn.textContent = originalText;
+  }
+});
+</script>

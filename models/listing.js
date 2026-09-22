@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
 const Review = require("./review.js");
 
@@ -13,6 +13,8 @@ const CATEGORIES = [
   "Arctic",
   "Beachfront",
   "Countryside",
+  "Lake View",
+  "Restaurants",
 ];
 
 const listingSchema = new Schema({
@@ -26,8 +28,8 @@ const listingSchema = new Schema({
     url: {
       type: String,
       default: "https://picsum.photos/400/400?random=1",
-      set: (v) => v === "" ? "https://picsum.photos/400/400?random=1" : v
-    }
+      set: (v) => (v === "" ? "https://picsum.photos/400/400?random=1" : v),
+    },
   },
   price: Number,
   location: String,
@@ -45,12 +47,12 @@ const listingSchema = new Schema({
     {
       type: Schema.Types.ObjectId,
       ref: "Review",
-    }
+    },
   ],
   owner: {
     type: Schema.Types.ObjectId,
     ref: "User",
-  }
+  },
 });
 
 listingSchema.post("findOneAndDelete", async (listing) => {
@@ -59,7 +61,7 @@ listingSchema.post("findOneAndDelete", async (listing) => {
   }
 });
 
-const Listing = mongoose.model('Listing', listingSchema);
+const Listing = mongoose.model("Listing", listingSchema);
 Listing.CATEGORIES = CATEGORIES; // single source of truth, reused by seed script + controller
 
 module.exports = Listing;

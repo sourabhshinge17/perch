@@ -275,7 +275,7 @@ User query: "${query}"`;
             Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
             "Content-Type": "application/json",
           },
-          timeout: 15000,
+          timeout: 7000,
         },
       );
       rawContent = response.data.choices[0]?.message?.content;

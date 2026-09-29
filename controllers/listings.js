@@ -19,7 +19,7 @@ function attachAvgRating(listings) {
 }
 
 module.exports.index = async (req, res) => {
-  const { category, search, location } = req.query; // ← added location
+  const { category, search, location, priceMax } = req.query;
   let filter = {};
 
   if (category && category !== "Trending") {
@@ -27,13 +27,17 @@ module.exports.index = async (req, res) => {
   }
 
   // Support BOTH ?search= and ?location= params
-  const searchTerm = search || location; // ← fallback to location
+  const searchTerm = search || location;
   if (searchTerm) {
     filter.$or = [
       { title: { $regex: searchTerm, $options: "i" } },
       { location: { $regex: searchTerm, $options: "i" } },
       { country: { $regex: searchTerm, $options: "i" } },
     ];
+  }
+
+  if (priceMax) {
+    filter.price = { $lte: Number(priceMax) };
   }
 
   let allListings = await Listing.find(filter).populate("reviews");
@@ -222,4 +226,73 @@ module.exports.generateDescription = async (req, res) => {
     location,
   });
   res.json({ description });
+};
+
+const parseSearchFilters = require("../utils/searchParser");
+
+const SEARCH_MODELS = [
+  "nvidia/nemotron-3.5-lightning:free",
+  "google/gemma-4-26b-a4b-it:free",
+  "qwen/qwen3.8-27b:free",
+];
+
+module.exports.aiSearch = async (req, res) => {
+  const { query } = req.body;
+
+  if (!query || !query.trim()) {
+    return res.status(400).json({ error: "Search query is required" });
+  }
+
+  const prompt = `You are a search query parser for a property listing site.
+Convert the user's plain-English query into a JSON object with
+exactly these three fields: category, priceMax, location.
+
+Valid category values: ${Listing.CATEGORIES.join(", ")}
+(use one of these exactly, or null if none clearly match)
+
+priceMax: a number, or null if no price limit mentioned
+location: a short place name string, or null if not mentioned
+
+Return ONLY the JSON object, nothing else — no explanation, no markdown, no code fences.
+
+Example output: {"category": "Beachfront", "priceMax": 5000, "location": "Goa"}
+
+User query: "${query}"`;
+
+  let rawContent = null;
+
+  for (const model of SEARCH_MODELS) {
+    try {
+      const response = await axios.post(
+        "https://openrouter.ai/api/v1/chat/completions",
+        {
+          model,
+          messages: [{ role: "user", content: prompt }],
+          temperature: 0,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
+            "Content-Type": "application/json",
+          },
+          timeout: 15000,
+        },
+      );
+      rawContent = response.data.choices[0]?.message?.content;
+      if (rawContent) break;
+    } catch (err) {
+      console.log(`AI search model ${model} failed: ${err.message}`);
+    }
+  }
+
+  const filters = rawContent
+    ? parseSearchFilters(rawContent, Listing.CATEGORIES)
+    : null;
+
+  if (!filters) {
+    // graceful fallback: treat the raw query as a plain location/text search
+    return res.json({ category: null, priceMax: null, location: query });
+  }
+
+  res.json(filters);
 };

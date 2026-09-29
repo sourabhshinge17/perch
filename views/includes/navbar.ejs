@@ -12,20 +12,20 @@
 
         <div class="collapse navbar-collapse" id="navbarContent">
 
-            <form class="mx-auto search-box" action="/listings" method="GET">
-                <div class="search-container">
-                    <input type="text" name="location" placeholder="Anywhere"
-                        class="search-input border-0"
-                        value="<%= typeof searchLocation !== 'undefined' ? searchLocation : '' %>">
-                    <div class="divider"></div>
-                    <span>Any Week</span>
-                    <div class="divider"></div>
-                    <span class="guest-text">Add Guests</span>
-                    <button class="search-btn" type="submit">
-                        <i class="fa-solid fa-magnifying-glass"></i>
-                    </button>
-                </div>
-            </form>
+           <form class="mx-auto search-box" id="ai-search-form" action="/listings" method="GET">
+    <div class="search-container">
+        <input type="text" name="location" id="ai-search-input" placeholder="Try: cheap mountain stay under 3000"
+            class="search-input border-0"
+            value="<%= typeof searchLocation !== 'undefined' ? searchLocation : '' %>">
+        <div class="divider"></div>
+        <span>Any Week</span>
+        <div class="divider"></div>
+        <span class="guest-text">Add Guests</span>
+        <button class="search-btn" type="submit">
+            <i class="fa-solid fa-magnifying-glass"></i>
+        </button>
+    </div>
+</form>
 
             <ul class="navbar-nav ms-auto align-items-center">
 

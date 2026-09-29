@@ -37,6 +37,8 @@ router.post(
   wrapAsync(listingController.generateDescription),
 );
 
+router.post("/ai-search", wrapAsync(listingController.aiSearch));
+
 // show, update and delete
 router
   .route("/:id")

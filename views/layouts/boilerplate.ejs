@@ -1,42 +1,93 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-   <meta charset="UTF-8">
-   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-   <title>Perch</title>
-   <link rel="stylesheet" href="/css/style.css">
-   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
-   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" integrity="sha512-2SwdPD6INVrV/lHTZbO2nodKhrnDdJK9/kg2XD1r9uGqPo1cUbujc+IYdlYdEErWNu69gVcYgdxlmVmzTWnetw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-   <link rel="stylesheet" href="/css/rating.css">
-   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-   <link rel="stylesheet" href="/css/navbar.css">
-   <link rel="stylesheet" href="/css/index.css">
-</head>
-<body>
-<%- include("../includes/navbar") %>
-<%- include("../includes/mobileNavbar") %>
-<%- include("../includes/mobileSearch") %> 
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Perch</title>
+    <link rel="stylesheet" href="/css/style.css" />
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB"
+      crossorigin="anonymous"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css"
+      integrity="sha512-2SwdPD6INVrV/lHTZbO2nodKhrnDdJK9/kg2XD1r9uGqPo1cUbujc+IYdlYdEErWNu69gVcYgdxlmVmzTWnetw=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    />
+    <link rel="stylesheet" href="/css/rating.css" />
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    />
+    <link rel="stylesheet" href="/css/navbar.css" />
+    <link rel="stylesheet" href="/css/index.css" />
+  </head>
+  <body>
+    <%- include("../includes/navbar") %> <%- include("../includes/mobileNavbar")
+    %> <%- include("../includes/mobileSearch") %>
 
-   <div class="container">
-       <%- include("../includes/flash.ejs") %>
-       <%- body %>
-   </div>
+    <div class="container">
+      <%- include("../includes/flash.ejs") %> <%- body %>
+    </div>
 
-   <%- include("../includes/footer.ejs") %>
+    <%- include("../includes/footer.ejs") %>
 
-   <!-- Leaflet MUST load before any page tries to use L.map() -->
-   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- Leaflet MUST load before any page tries to use L.map() -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
-   <script src="/js/script.js"></script>
-   <script>
-  document.addEventListener('DOMContentLoaded', () => {
-    const params = new URLSearchParams(window.location.search);
-    if (params.has('location') || params.has('category')) {
-      const grid = document.querySelector('.listing-grid');
-      if (grid) grid.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-  });
-</script>
-</body>
+    <script
+      src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"
+      integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI"
+      crossorigin="anonymous"
+    ></script>
+    <script src="/js/script.js"></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        const params = new URLSearchParams(window.location.search);
+        if (params.has("location") || params.has("category")) {
+          const grid = document.querySelector(".listing-grid");
+          if (grid) grid.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+      });
+    </script>
+    <script>
+      document
+        .getElementById("ai-search-form")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault(); // stop the normal GET submit, we're intercepting
+
+          const input = document.getElementById("ai-search-input");
+          const query = input.value.trim();
+
+          if (!query) return;
+
+          try {
+            const res = await fetch("/listings/ai-search", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ query }),
+            });
+
+            if (!res.ok) throw new Error("AI search failed");
+
+            const filters = await res.json();
+
+            const params = new URLSearchParams();
+            if (filters.category) params.set("category", filters.category);
+            if (filters.priceMax) params.set("priceMax", filters.priceMax);
+            if (filters.location) params.set("location", filters.location);
+
+            window.location.href = `/listings?${params.toString()}`;
+          } catch (err) {
+            console.error(err);
+            // fallback: just do the plain old location search instead of dead-ending
+            window.location.href = `/listings?location=${encodeURIComponent(query)}`;
+          }
+        });
+    </script>
+  </body>
 </html>
